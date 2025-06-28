@@ -36,15 +36,25 @@ function parserParsedBlocks(parsedBlocks) {
     endpoint.local.type = endpoint.local.type.toLowerCase();
     swaggerObj.paths[endpoint.local.url] = swaggerObj.paths[endpoint.local.url] || {};
     if (swaggerObj.paths[endpoint.local.url][endpoint.local.type] !== undefined) {
-      throw new Error(`Endpoint with url ${endpoint.local.url} already exists in swaggerObj.paths. Please check your apidoc configuration.`);
+      console.log(`Endpoint with url ${endpoint.local.url} with method ${endpoint.local.type} already exists in swaggerObj.paths. Please check your apidoc configuration.`);
     }
-    swaggerObj.paths[endpoint.local.url][endpoint.local.type] = {};
+    var res = {};
+    swaggerObj.paths[endpoint.local.url][endpoint.local.type] = res;
 
-    for (var key in endpoint.local) {
-      swaggerObj.paths[endpoint.local.url][endpoint.local.type].description = endpoint.local.description || '';
-      swaggerObj.paths[endpoint.local.url][endpoint.local.type].tags =
-        (swaggerObj.paths[endpoint.local.url][endpoint.local.type].tags || []).append(endpoint.local.group || 'default');
-
+    res.description = endpoint.local.description || '';
+    res.tags = (res.tags || [])
+    res.tags.push(endpoint.local.group || 'default');
+    if(endpoint.local.parameter && endpoint.local.parameter.fields && Array.isArray(endpoint.local.parameter.fields.Parameter)) {
+      arr = endpoint.local.parameter.fields.Parameter;
+      arr.forEach((field) => {
+        (res.parameters || []).push({
+          name: field.field,
+          in: 'body',
+          required: !field.optional,
+          description: field.description,
+          type: String(field.type).toLowerCase()
+        })
+      });
       // TODO Make rest of swagger object...
       // Added the code below after sanityCheck to appdoc/lib/core/parser.js:176
       // app.hook('parser-parsed-blocks', parsedBlocks, self.elements, filename);
